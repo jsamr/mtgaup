@@ -1,0 +1,24 @@
+{
+  "name": "mtgaup",
+  "version": "1.0.0",
+  "description": "Magic The Gathering Arena Update Program",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --config ./webpack-config.js",
+    "prepublishOnly": "npm run build"
+  },
+  "bin": "dist/mtgaup",
+  "keywords": [],
+  "author": "Jules Sam Randolph <jules.sam.randolph@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "pkg": "^4.4.0",
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "dependencies": {
+    "commander": "^3.0.2",
+    "node-fetch": "^2.6.0"
+  }
+}
