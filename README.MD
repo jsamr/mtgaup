@@ -30,7 +30,7 @@ You need two environment variables set on your session:
 - `MTGA_WINE_PREFIX`, the wine prefix for MTGA install. Example: `$HOME/Games/magic-the-gathering-arena`
 - `MTGA_WINE_BINARY`, the wine binary used for MTGA. Example (Lutris): `$HOME/.local/share/lutris/runners/wine/tkg-unity-4.1-x86_64/bin/wine`
 
-## Instructions
+## How to use
 
 ```
 mtgaup -h
