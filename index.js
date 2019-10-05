@@ -14,7 +14,7 @@ const MTGA_WINE_BINARY = 'MTGA_WINE_BINARY'
 const description = `
 This program, when called with no argument, will do the following:
 
-1. Scratch the content of a community forum post containing URLs pointing to msp (or msi) binaries.
+1. Scrap the content of a community forum post containing URLs pointing to msp (or msi) binaries.
 2. Download, given user provided options, the preferred binary.
 3. Install the chosen binary with \`wine msiexec'.
 
@@ -25,7 +25,7 @@ Bug reports:    https://github.com/jsamr/mtgaup/issues
 `
 
 const program = new commander.Command()
-program.version('1.0.1')
+program.version('1.0.2')
   .usage(description)
   .option('-I, --info', 'just show available binaries.')
   .option('-D, --download', 'just download executable.')

@@ -1,6 +1,6 @@
 {
   "name": "mtgaup",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Magic The Gathering Arena Update Program",
   "main": "index.js",
   "scripts": {
