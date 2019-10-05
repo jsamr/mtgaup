@@ -6,17 +6,33 @@ const path = require('path')
 const writeFilePromise = util.promisify(writeFile)
 const exec = util.promisify(require('child_process').exec)
 
+
+const forumPostURL = 'https://mtgarena-api.community.gl/forums/articles/58489?logView=0'
+const MTGA_WINE_PREFIX = 'MTGA_WINE_PREFIX'
+const MTGA_WINE_BINARY = 'MTGA_WINE_BINARY'
+
+const description = `
+This program, when called with no argument, will do the following:
+
+1. Scratch the content of a community forum post containing URLs pointing to msp (or msi) binaries.
+2. Download, given user provided options, the preferred binary.
+3. Install the chosen binary with \`wine msiexec'.
+
+Note that environment ${MTGA_WINE_PREFIX} and ${MTGA_WINE_BINARY} must be set.
+
+More info here: https://github.com/jsamr/mtgaup
+Bug reports:    https://github.com/jsamr/mtgaup/issues
+`
+
 const program = new commander.Command()
-program.version('0.0.1')
-  .option('-I, --info', 'just show available executables.')
+program.version('1.0.1')
+  .usage(description)
+  .option('-I, --info', 'just show available binaries.')
   .option('-D, --download', 'just download executable.')
   .option('-p, --patch', 'prefer MSP patch to MSI install, if available (default).')
   .option('-i, --install', 'prefer MSI install to MSP patch, if available.')
   .option('-d, --download-folder <folder>', 'specify where you wish to download binaries. Defaults to CWD.')
 
-const MTGA_WINE_PREFIX = 'MTGA_WINE_PREFIX'
-const MTGA_WINE_BINARY = 'MTGA_WINE_BINARY'
-const forumPostURL = 'https://mtgarena-api.community.gl/forums/articles/58489?logView=0'
 const mtgaWinePrefix = process.env[MTGA_WINE_PREFIX]
 const mtgaWineBinary = process.env[MTGA_WINE_BINARY]
 
@@ -46,7 +62,7 @@ function getFileNameFromURI(uri) {
   return uri.substring(uri.lastIndexOf('/')+1)
 }
 
-async function fetchExecutables() {
+async function fetchBinaries() {
   let patch = null
   let installer = null
   const resp = await fetch(forumPostURL)
@@ -84,27 +100,32 @@ async function downloadFromURI(uri, downloadFilePath) {
 }
 
 async function runInWine(downloadFilePath, flag) {
-  const command = `${mtgaWineBinary} msiexec /${flag} "${downloadFilePath}`
-  await exec(`export WINEPREFIX="${mtgaWinePrefix}"; ${command}"`)
+  const command = `${mtgaWineBinary} msiexec /${flag} "${downloadFilePath}"`
+  await exec(command, {
+    env: {
+      ...process.env,
+      WINEPREFIX: mtgaWinePrefix
+    }
+  })
   console.info(`Run command ${command} finished.`)
 }
 
 async function run() {
-    const executables = await fetchExecutables()
-    const shouldRunPatch = executables.patch && (userPrefersNone || program.patch)
+    const binaries = await fetchBinaries()
+    const shouldRunPatch = binaries.patch && (userPrefersNone || program.patch)
     const onlyInfo =  program.info
     const onlyDownload = program.download
     const shouldDownload = onlyDownload || !onlyInfo
     const shouldInstall = shouldDownload && !onlyDownload && !onlyInfo
     if (shouldRunPatch) {
-      console.info(`Found patch executable ${executables.patch}`)
-      const uri = executables.patch
+      console.info(`Found patch binary ${binaries.patch}`)
+      const uri = binaries.patch
       const downloadFilePath = getDownloadFilePath(uri)
       shouldDownload && await downloadFromURI(uri, downloadFilePath)
       shouldInstall && await runInWine(downloadFilePath, 'p')
-    } else if (executables.installer) {
-      console.info(`Found installer executable ${executables.installer}`)
-      const uri = executables.installer
+    } else if (binaries.installer) {
+      console.info(`Found installer binary ${binaries.installer}`)
+      const uri = binaries.installer
       const downloadFilePath = getDownloadFilePath(uri)
       shouldDownload && await downloadFromURI(uri, downloadFilePath)
       shouldInstall && await runInWine(downloadFilePath, 'i')
