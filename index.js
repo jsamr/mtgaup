@@ -10,6 +10,9 @@ const exec = util.promisify(require('child_process').exec)
 const forumPostURL = 'https://mtgarena-api.community.gl/forums/articles/58489?logView=0'
 const MTGA_WINE_PREFIX = 'MTGA_WINE_PREFIX'
 const MTGA_WINE_BINARY = 'MTGA_WINE_BINARY'
+const mtgaWinePrefix = process.env[MTGA_WINE_PREFIX]
+const mtgaWineBinary = process.env[MTGA_WINE_BINARY]
+const setupHelp = 'FIND OUT HOW TO DO SO: https://github.com/jsamr/mtgaup/wiki/Setup'
 
 const description = `
 This program, when called with no argument, will do the following:
@@ -18,14 +21,18 @@ This program, when called with no argument, will do the following:
 2. Download, given user provided options, the preferred binary.
 3. Install the chosen binary with \`wine msiexec'.
 
-Note that environment ${MTGA_WINE_PREFIX} and ${MTGA_WINE_BINARY} must be set.
+ENVIRONMENT VARIABLES
 
-More info here: https://github.com/jsamr/mtgaup
-Bug reports:    https://github.com/jsamr/mtgaup/issues
+${mtgaWinePrefix ? `MTGA_WINE_PREFIX is set to "${mtgaWinePrefix}"` : `WARNING: you must set ${MTGA_WINE_PREFIX}`}
+${mtgaWineBinary ? `MTGA_WINE_BINARY is set to "${mtgaWineBinary}"` : `WARNING: you must set ${MTGA_WINE_BINARY}`}
+${!mtgaWineBinary && !mtgaWinePrefix ? setupHelp : ''}
+
+Wiki:        https://github.com/jsamr/mtgaup/wiki
+Bug Reports: https://github.com/jsamr/mtgaup/issues
 `
 
 const program = new commander.Command()
-program.version('1.0.2')
+program.version('1.1.0')
   .usage(description)
   .option('-I, --info', 'just show available binaries.')
   .option('-D, --download', 'just download executable.')
@@ -33,20 +40,17 @@ program.version('1.0.2')
   .option('-i, --install', 'prefer MSI install to MSP patch, if available.')
   .option('-d, --download-folder <folder>', 'specify where you wish to download binaries. Defaults to CWD.')
 
-const mtgaWinePrefix = process.env[MTGA_WINE_PREFIX]
-const mtgaWineBinary = process.env[MTGA_WINE_BINARY]
-
 program.parse(process.argv)
 
 const userPrefersNone = !program.patch && !program.install
 
 if (!mtgaWinePrefix) {
-  console.warn("You must provide " + MTGA_WINE_PREFIX + " environment variable.")
+  console.error(`You must provide ${MTGA_WINE_PREFIX} environment variable.\n${setupHelp}`)
   process.exit(1)
 }
 
 if (!mtgaWineBinary) {
-  console.warn("You must provide " + MTGA_WINE_BINARY + " environment variable.")
+  console.error(`You must provide ${MTGA_WINE_BINARY} environment variable.\n${setupHelp}`)
   process.exit(1)
 }
 
