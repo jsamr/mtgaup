@@ -14,6 +14,10 @@ const mtgaWinePrefix = process.env[MTGA_WINE_PREFIX]
 const mtgaWineBinary = process.env[MTGA_WINE_BINARY]
 const setupHelp = '\nFIND OUT HOW: https://github.com/jsamr/mtgaup/wiki/Setup'
 
+const envInfo = `ENVIRONMENT VARIABLES
+${mtgaWinePrefix ? `  MTGA_WINE_PREFIX is set to "${mtgaWinePrefix}"` : `WARNING: you must set ${MTGA_WINE_PREFIX}`}
+${mtgaWineBinary ? `  MTGA_WINE_BINARY is set to "${mtgaWineBinary}"` : `WARNING: you must set ${MTGA_WINE_BINARY}`}${!mtgaWineBinary && !mtgaWinePrefix ? setupHelp : ''}`
+
 const description = `
 This program, when called with no argument, will do the following:
 
@@ -21,22 +25,21 @@ This program, when called with no argument, will do the following:
   2. Download, given user provided options, the preferred binary.
   3. Install the chosen binary with \`wine msiexec'.
 
-ENVIRONMENT VARIABLES
-${mtgaWinePrefix ? `  MTGA_WINE_PREFIX is set to "${mtgaWinePrefix}"` : `WARNING: you must set ${MTGA_WINE_PREFIX}`}
-${mtgaWineBinary ? `  MTGA_WINE_BINARY is set to "${mtgaWineBinary}"` : `WARNING: you must set ${MTGA_WINE_BINARY}`}${!mtgaWineBinary && !mtgaWinePrefix ? setupHelp : ''}
+${envInfo}
 
 ONLINE RESOURCES
   Wiki:        https://github.com/jsamr/mtgaup/wiki
   Bug Reports: https://github.com/jsamr/mtgaup/issues`
 
 const program = new commander.Command()
-program.version('1.1.1')
+program.version('1.2.0')
   .usage(description)
-  .option('-I, --info', 'just show available binaries.')
-  .option('-D, --download', 'just download executable.')
-  .option('-p, --patch', 'prefer MSP patch to MSI install, if available (default).')
-  .option('-i, --install', 'prefer MSI install to MSP patch, if available.')
-  .option('-d, --download-folder <folder>', 'specify where you wish to download binaries. Defaults to CWD.')
+  .option('-I, --info', 'scrap binaries available for download')
+  .option('-E, --env-info', 'print environment variables information')
+  .option('-D, --download', 'scrap binaries and download the preferred one')
+  .option('-p, --patch', 'prefer MSP patch to MSI install, if available (default)')
+  .option('-i, --install', 'prefer MSI install to MSP patch, if available')
+  .option('-d, --download-folder <folder>', 'specify where you wish to download binaries. Defaults to CWD')
 
 program.parse(process.argv)
 
@@ -51,7 +54,6 @@ if (!mtgaWineBinary) {
   console.error(`You must provide ${MTGA_WINE_BINARY} environment variable.${setupHelp}`)
   process.exit(1)
 }
-
 
 if (userPrefersNone) {
   console.info("You didn't provide any option. Defaulting to patch, if available.")
@@ -137,5 +139,9 @@ async function run() {
     }
 }
 
+if (program.envInfo) {
+  console.info(envInfo)
+  process.exit(0)
+}
 
 run()
