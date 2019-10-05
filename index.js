@@ -31,7 +31,7 @@ ONLINE RESOURCES
   Bug Reports: https://github.com/jsamr/mtgaup/issues`
 
 const program = new commander.Command()
-program.version('1.2.1')
+program.version('1.2.2')
   .usage(description)
   .option('-I, --info', 'scrap binaries available for download')
   .option('-E, --env-info', 'print environment variables information')
