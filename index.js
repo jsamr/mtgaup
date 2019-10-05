@@ -6,8 +6,7 @@ const path = require('path')
 const writeFilePromise = util.promisify(writeFile)
 const exec = util.promisify(require('child_process').exec)
 
-
-const forumPostURL = 'https://mtgarena-api.community.gl/forums/articles/58489?logView=0'
+const versionEndpoint = 'https://mtgarena.downloads.wizards.com/Live/Windows32/version'
 const MTGA_WINE_PREFIX = 'MTGA_WINE_PREFIX'
 const MTGA_WINE_BINARY = 'MTGA_WINE_BINARY'
 const mtgaWinePrefix = process.env[MTGA_WINE_PREFIX]
@@ -21,7 +20,7 @@ ${mtgaWineBinary ? `  MTGA_WINE_BINARY is set to "${mtgaWineBinary}"` : `WARNING
 const description = `
 This program, when called with no argument, will do the following:
 
-  1. Scrap the content of a community forum post containing URLs pointing to msp (or msi) binaries.
+  1. Fetch a WOTC endpoint containing URLs pointing to latest msp (or msi) binaries.
   2. Download, given user provided options, the preferred binary.
   3. Install the chosen binary with \`wine msiexec'.
 
@@ -59,30 +58,20 @@ if (userPrefersNone) {
   console.info("You didn't provide any option. Defaulting to patch, if available.")
 }
 
-const patchFileRegex = /a href=["'](https:\/\/[^\s"'<>]+\.msp)["']/g
-const installFileRegex = /a href=["'](https:\/\/[^\s"'<>]+\.msi)["']/g
-
 function getFileNameFromURI(uri) {
-  return uri.substring(uri.lastIndexOf('/')+1)
+  return uri.substring(uri.lastIndexOf('/') + 1)
 }
 
-async function fetchBinaries() {
+async function fetchVersionInfo() {
   let patch = null
   let installer = null
-  const resp = await fetch(forumPostURL)
+  const resp = await fetch(versionEndpoint)
   if (resp.ok) {
     const body = await resp.json()
-    const text = body.article.content.text
-    if (text) {
-        const patchResult = new RegExp(patchFileRegex).exec(text)
-        if (patchResult && patchResult.length > 1) {
-            patch = patchResult[1]
-        }
-        const installerResult = new RegExp(installFileRegex).exec(text)
-        if (installerResult && installerResult.length > 1) {
-            installer = installerResult[1]
-        }
-    }
+    patch = body.CurrentPatchURL
+    installer = body.CurrentInstallerURL
+  } else {
+    console.warn(`Network error. Couldn't fetch ${versionEndpoint}. HTTP Code ${resp.status}.`)
   }
   return {
       patch,
@@ -115,7 +104,7 @@ async function runInWine(downloadFilePath, flag) {
 }
 
 async function run() {
-    const binaries = await fetchBinaries()
+    const binaries = await fetchVersionInfo()
     const shouldRunPatch = binaries.patch && (userPrefersNone || program.patch)
     const onlyInfo =  program.info
     const onlyDownload = program.download
