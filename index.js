@@ -31,7 +31,7 @@ ONLINE RESOURCES
   Bug Reports: https://github.com/jsamr/mtgaup/issues`
 
 const program = new commander.Command()
-program.version('1.2.0')
+program.version('1.2.1')
   .usage(description)
   .option('-I, --info', 'scrap binaries available for download')
   .option('-E, --env-info', 'print environment variables information')
@@ -43,20 +43,6 @@ program.version('1.2.0')
 program.parse(process.argv)
 
 const userPrefersNone = !program.patch && !program.install
-
-if (!mtgaWinePrefix) {
-  console.error(`You must provide ${MTGA_WINE_PREFIX} environment variable.${setupHelp}`)
-  process.exit(1)
-}
-
-if (!mtgaWineBinary) {
-  console.error(`You must provide ${MTGA_WINE_BINARY} environment variable.${setupHelp}`)
-  process.exit(1)
-}
-
-if (userPrefersNone) {
-  console.info("You didn't provide any option. Defaulting to patch, if available.")
-}
 
 function getFileNameFromURI(uri) {
   return uri.substring(uri.lastIndexOf('/') + 1)
@@ -103,7 +89,23 @@ async function runInWine(downloadFilePath, flag) {
   console.info(`Run command ${command} finished.`)
 }
 
+function makeRunAssertions() {
+  if (!mtgaWinePrefix) {
+    console.error(`You must provide ${MTGA_WINE_PREFIX} environment variable.${setupHelp}`)
+    process.exit(1)
+  }
+  if (!mtgaWineBinary) {
+    console.error(`You must provide ${MTGA_WINE_BINARY} environment variable.${setupHelp}`)
+    process.exit(1)
+  } 
+  if (userPrefersNone) {
+    console.info("Defaulting to patch binary, if available.")
+  }
+  
+}
+
 async function run() {
+    makeRunAssertions()
     const binaries = await fetchVersionInfo()
     const shouldRunPatch = binaries.patch && (userPrefersNone || program.patch)
     const onlyInfo =  program.info
