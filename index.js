@@ -4,7 +4,7 @@ const util = require('util')
 const { writeFile } = require('fs')
 const path = require('path')
 const writeFilePromise = util.promisify(writeFile)
-const exec = util.promisify(require('child_process').exec)
+const spawn = require('child_process').spawn
 
 const versionEndpoint = 'https://mtgarena.downloads.wizards.com/Live/Windows32/version'
 const MTGA_WINE_PREFIX = 'MTGA_WINE_PREFIX'
@@ -75,18 +75,33 @@ async function downloadFromURI(uri, downloadFilePath) {
   const x = await fetch(uri)
   const buffer = await  x.arrayBuffer()
   await writeFilePromise(downloadFilePath, Buffer.from(buffer))
-  console.info(`Download of ${downloadFilePath} finished.`)
+  console.info(`Download of ${downloadFilePath} completed.`)
 }
 
 async function runInWine(downloadFilePath, flag) {
   const command = `${mtgaWineBinary} msiexec /${flag} "${downloadFilePath}"`
-  await exec(command, {
+  const options = {
     env: {
       ...process.env,
       WINEPREFIX: mtgaWinePrefix
-    }
-  })
-  console.info(`Run command ${command} finished.`)
+    },
+    stdio: 'inherit',
+    detached: true,
+    shell: true
+  }
+  try {
+    await new Promise((res, rej) => {
+      const child = spawn(command, options)
+      child.on('close', function(exitCode) {
+        exitCode === 0 ? res() : rej()
+      })
+    })
+  } catch (e) {
+    console.error(`${command} exited with a non-0 status`)
+    process.exit(1)
+  }
+
+  console.info(`Run command ${command} completed.`)
 }
 
 function makeRunAssertions() {
@@ -101,7 +116,6 @@ function makeRunAssertions() {
   if (userPrefersNone) {
     console.info("Defaulting to patch binary, if available.")
   }
-  
 }
 
 async function run() {
@@ -125,7 +139,7 @@ async function run() {
       shouldDownload && await downloadFromURI(uri, downloadFilePath)
       shouldInstall && await runInWine(downloadFilePath, 'i')
     } else {
-      console.warn("Couldn't find any binary.")
+      console.warn("Couldn't find any binary. Exiting.")
       process.exit(1)
     }
 }
@@ -135,4 +149,7 @@ if (program.envInfo) {
   process.exit(0)
 }
 
-run()
+run().catch(function (e) {
+  console.error(e.message)
+  process.exit(1)
+})
